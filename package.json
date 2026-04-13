@@ -1,0 +1,6 @@
+{
+  "name": "otm-brief-generator",
+  "version": "1.0.0",
+  "description": "On The Mend guest brief generator",
+  "private": true
+}
