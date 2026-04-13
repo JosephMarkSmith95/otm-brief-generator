@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>On The Mend — Interview Builder</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --cream: #FAF8F4;
+      --cream-mid: #F0EDE6;
+      --cream-dark: #E0DBD0;
+      --charcoal: #2A2A28;
+      --charcoal-mid: #444440;
+      --charcoal-light: #6B6B67;
+      --charcoal-faint: #9A9A96;
+      --rust: #8B3A2A;
+      --rust-light: #F5EAE7;
+      --green-ok: #2D6A4F;
+      --green-light: #E8F5EE;
+      --border: rgba(42,42,40,0.15);
+      --border-mid: rgba(42,42,40,0.25);
+      --radius: 8px;
+      --radius-lg: 12px;
+    }
+    body {
+      background: var(--cream);
+      color: var(--charcoal);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+    .page { max-width: 780px; margin: 0 auto; padding: 3rem 1.5rem 6rem; }
+
+    .masthead { border-bottom: 1px solid var(--border-mid); padding-bottom: 1.5rem; margin-bottom: 2.5rem; }
+    .masthead-top { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+    .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--charcoal); }
+    .masthead h1 { font-size: 18px; font-weight: 600; letter-spacing: -0.3px; }
+    .masthead p { font-size: 13px; color: var(--charcoal-light); margin-left: 19px; }
+
+    .field { margin-bottom: 1.5rem; }
+    .field label { display: block; font-size: 13px; font-weight: 600; color: var(--charcoal); margin-bottom: 5px; }
+    .field .hint { font-size: 12px; color: var(--charcoal-faint); margin-bottom: 6px; line-height: 1.5; }
+    .req { color: var(--rust); }
+
+    input[type="text"], textarea {
+      width: 100%; font-size: 14px; color: var(--charcoal);
+      background: #fff; border: 1px solid var(--border-mid);
+      border-radius: var(--radius); padding: 10px 13px;
+      font-family: inherit; resize: vertical;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    input[type="text"]:focus, textarea:focus {
+      outline: none; border-color: var(--charcoal);
+      box-shadow: 0 0 0 3px rgba(42,42,40,0.07);
+    }
+
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media (max-width: 520px) { .two-col { grid-template-columns: 1fr; } }
+
+    .dump-wrap { position: relative; }
+    .dump-wrap textarea {
+      min-height: 340px;
+      font-size: 13.5px;
+      line-height: 1.7;
+      padding: 14px;
+    }
+    .char-count {
+      position: absolute; bottom: 10px; right: 14px;
+      font-size: 11px; color: var(--charcoal-faint);
+      pointer-events: none;
+    }
+
+    .examples {
+      margin-top: 8px;
+      padding: 12px 14px;
+      background: var(--cream-mid);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+    }
+    .examples-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--charcoal-faint); margin-bottom: 6px; }
+    .examples ul { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; }
+    .examples ul li {
+      font-size: 12px; color: var(--charcoal-light);
+      background: #fff; border: 1px solid var(--border);
+      border-radius: 20px; padding: 3px 10px;
+    }
+
+    .generate-btn {
+      width: 100%; padding: 14px; margin-top: 0.5rem;
+      border-radius: var(--radius); font-size: 15px; font-weight: 600;
+      cursor: pointer; border: none; font-family: inherit;
+      letter-spacing: -0.2px; transition: all 0.15s;
+    }
+    .generate-btn:not(:disabled) { background: var(--charcoal); color: var(--cream); }
+    .generate-btn:not(:disabled):hover { background: var(--charcoal-mid); }
+    .generate-btn:not(:disabled):active { transform: scale(0.99); }
+    .generate-btn:disabled {
+      background: var(--cream-dark); color: var(--charcoal-faint);
+      cursor: not-allowed; border: 1px solid var(--border);
+    }
+
+    .output { margin-top: 2.5rem; display: none; }
+    .output hr { border: none; border-top: 1px solid var(--border-mid); margin-bottom: 2rem; }
+
+    .loading-state { text-align: center; padding: 3rem 1rem; }
+    .spinner {
+      width: 26px; height: 26px; border: 2px solid var(--cream-dark);
+      border-top-color: var(--charcoal); border-radius: 50%;
+      animation: spin 0.7s linear infinite; margin: 0 auto 12px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-label { font-size: 13px; color: var(--charcoal-light); }
+
+    .result-card {
+      background: #fff; border: 1px solid var(--border-mid);
+      border-radius: var(--radius-lg); overflow: hidden;
+    }
+    .result-toolbar {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 14px 20px; border-bottom: 1px solid var(--border);
+      background: var(--cream-mid);
+    }
+    .result-toolbar-label { font-size: 13px; font-weight: 600; color: var(--charcoal); }
+    .toolbar-actions { display: flex; gap: 8px; }
+    .action-btn {
+      padding: 6px 13px; border-radius: var(--radius);
+      border: 1px solid var(--border-mid); background: #fff;
+      font-size: 12px; font-weight: 600; cursor: pointer;
+      color: var(--charcoal); font-family: inherit; transition: all 0.12s;
+    }
+    .action-btn:hover { background: var(--cream); }
+    .action-btn.copied { background: var(--green-light); color: var(--green-ok); border-color: var(--green-ok); }
+
+    .result-body { padding: 2rem 2.25rem; }
+    .result-text {
+      white-space: pre-wrap; font-size: 14px; line-height: 1.85;
+      color: var(--charcoal); font-family: inherit;
+    }
+
+    .error-card {
+      background: var(--rust-light); border: 1px solid rgba(139,58,42,0.25);
+      border-radius: var(--radius); padding: 14px 16px;
+      font-size: 13px; color: var(--rust); display: none;
+    }
+
+    .new-btn-wrap { margin-top: 1.5rem; text-align: center; }
+    .new-btn {
+      padding: 9px 22px; border-radius: var(--radius);
+      border: 1px solid var(--border-mid); background: #fff;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      color: var(--charcoal); font-family: inherit; transition: all 0.12s;
+    }
+    .new-btn:hover { background: var(--cream-mid); }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <div class="masthead">
+    <div class="masthead-top">
+      <div class="dot"></div>
+      <h1>On The Mend — Interview Builder</h1>
+    </div>
+    <p>Paste your research notes and get a full interview structure in seconds.</p>
+  </div>
+
+  <div class="two-col" style="margin-bottom:1.5rem;">
+    <div class="field" style="margin-bottom:0;">
+      <label>Guest name <span class="req">*</span></label>
+      <input type="text" id="guestName" placeholder="e.g. Roy Stride" />
+    </div>
+    <div class="field" style="margin-bottom:0;">
+      <label>Recording date &amp; time <span class="req">*</span></label>
+      <input type="text" id="recordingDate" placeholder="e.g. 30th March, 10am" />
+    </div>
+  </div>
+
+  <div class="field">
+    <label>Research dump <span class="req">*</span></label>
+    <div class="hint">Paste everything — social clips, YouTube links, booking emails, producer notes, your own thoughts. The messier the better. Claude will make sense of it.</div>
+    <div class="dump-wrap">
+      <textarea id="researchDump" placeholder="e.g.
+
+Roy Stride — Scouting for Girls frontman. Got sober 23rd Nov 2021 after a nervous breakdown on tour. 4-month tour, 70 shows rescheduled from COVID. Started collapsing on stage, reduced set from 90 mins to 47 mins. Last drink at Dublin Academy.
+
+His quote: 'I was in a band as an excuse to get wasted and the music part just got in the way.'
+
+New album 'These Are The Good Days' out 27th March. New single 'Don't You Go Solo'.
+
+Producer note: first time he's spoken about this in depth. Happy to go wherever. Bandmates still drink — that's a tension worth exploring.
+
+Links:
+https://retropopmagazine.com/scouting-for-girls-roy-stride..."></textarea>
+      <span class="char-count" id="charCount">0 characters</span>
+    </div>
+    <div class="examples">
+      <div class="examples-title">What to include</div>
+      <ul>
+        <li>Guest quotes &amp; stories</li>
+        <li>YouTube / podcast links</li>
+        <li>Social clip descriptions</li>
+        <li>Booking or PR emails</li>
+        <li>Sensitivities / off-limits</li>
+        <li>What they're promoting</li>
+        <li>Your own hunches</li>
+        <li>Slack notes from the team</li>
+      </ul>
+    </div>
+  </div>
+
+  <button class="generate-btn" id="genBtn" disabled>Generate interview structure</button>
+
+  <div class="output" id="output">
+    <hr>
+    <div class="loading-state" id="loadingState">
+      <div class="spinner"></div>
+      <div class="loading-label">Building your interview structure — about 20 seconds…</div>
+    </div>
+    <div class="error-card" id="errorCard"></div>
+    <div id="resultWrap" style="display:none;">
+      <div class="result-card">
+        <div class="result-toolbar">
+          <span class="result-toolbar-label" id="resultLabel">Interview structure</span>
+          <div class="toolbar-actions">
+            <button class="action-btn" id="copyBtn">Copy</button>
+          </div>
+        </div>
+        <div class="result-body">
+          <div class="result-text" id="resultText"></div>
+        </div>
+      </div>
+      <div class="new-btn-wrap">
+        <button class="new-btn" id="newBtn">Start a new brief</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+<script>
+  const guestName    = document.getElementById('guestName');
+  const recordingDate = document.getElementById('recordingDate');
+  const researchDump = document.getElementById('researchDump');
+  const genBtn       = document.getElementById('genBtn');
+  const charCount    = document.getElementById('charCount');
+
+  function checkReady() {
+    const ok = guestName.value.trim() && recordingDate.value.trim() && researchDump.value.trim().length > 20;
+    genBtn.disabled = !ok;
+  }
+
+  [guestName, recordingDate].forEach(el => el.addEventListener('input', checkReady));
+
+  researchDump.addEventListener('input', () => {
+    const len = researchDump.value.length;
+    charCount.textContent = len.toLocaleString() + ' character' + (len === 1 ? '' : 's');
+    checkReady();
+  });
+
+  document.getElementById('copyBtn').addEventListener('click', () => {
+    const text = document.getElementById('resultText').textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.getElementById('copyBtn');
+      btn.textContent = 'Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+    });
+  });
+
+  document.getElementById('newBtn').addEventListener('click', () => {
+    document.getElementById('output').style.display = 'none';
+    document.getElementById('resultWrap').style.display = 'none';
+    document.getElementById('resultText').textContent = '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  genBtn.addEventListener('click', async () => {
+    const inputs = {
+      guestName:    guestName.value.trim(),
+      recordingDate: recordingDate.value.trim(),
+      researchDump:  researchDump.value.trim(),
+    };
+
+    const output      = document.getElementById('output');
+    const loadingState = document.getElementById('loadingState');
+    const errorCard   = document.getElementById('errorCard');
+    const resultWrap  = document.getElementById('resultWrap');
+
+    output.style.display    = 'block';
+    loadingState.style.display = 'block';
+    errorCard.style.display = 'none';
+    resultWrap.style.display = 'none';
+    output.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    try {
+      const res = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ inputs }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error ' + res.status);
+
+      loadingState.style.display = 'none';
+      document.getElementById('resultLabel').textContent = inputs.guestName + ' — interview structure';
+      document.getElementById('resultText').textContent = data.brief;
+      resultWrap.style.display = 'block';
+
+    } catch (e) {
+      loadingState.style.display = 'none';
+      errorCard.textContent = 'Error: ' + (e.message || 'Something went wrong. Please try again.');
+      errorCard.style.display = 'block';
+    }
+  });
+</script>
+</body>
+</html>
